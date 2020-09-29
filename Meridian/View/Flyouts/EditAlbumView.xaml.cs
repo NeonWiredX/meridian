@@ -13,9 +13,9 @@ namespace Meridian.View.Flyouts
     /// </summary>
     public partial class EditAlbumView : UserControl
     {
-        private VkAudioAlbum _album;
+        private VkPlaylist _album;
 
-        public EditAlbumView(VkAudioAlbum album)
+        public EditAlbumView(VkPlaylist album)
         {
             InitializeComponent();
 

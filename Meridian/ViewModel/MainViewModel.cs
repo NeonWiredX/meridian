@@ -44,7 +44,6 @@ namespace Meridian.ViewModel
             new MainMenuItem() {Group = MainResources.MainMenuVkTitle, GroupIcon = Application.Current.Resources["VkIcon"], Page = "/Main.FeedView", Title = MainResources.MainMenuFeed},
             new MainMenuItem() {Group = MainResources.MainMenuVkTitle, GroupIcon = Application.Current.Resources["VkIcon"], Page = "/Main.PopularAudioView", Title = MainResources.MainMenuPopular},
             new MainMenuItem() {Group = MainResources.MainMenuVkTitle, GroupIcon = Application.Current.Resources["VkIcon"], Page = "/Main.RecommendationsView", Title = MainResources.MainMenuRecommendations},
-            //new MainMenuItem() {Group = MainResources.MainMenuVkTitle, GroupIcon = Application.Current.Resources["VkIcon"], Page = "/Main.RadioView", Title = MainResources.MainMenuRadio},
 
             new MainMenuItem() {Group = MainResources.MainMenuVkTitle, GroupIcon = Application.Current.Resources["VkIcon"], Page = "/People.FriendsView", Title = MainResources.MainMenuFriends},
             new MainMenuItem() {Group = MainResources.MainMenuVkTitle, GroupIcon = Application.Current.Resources["VkIcon"], Page = "/People.SocietiesView", Title = MainResources.MainMenuSocieties},
@@ -70,7 +69,6 @@ namespace Meridian.ViewModel
         private string _lastArtist;
         private CancellationTokenSource _artCancellationToken = new CancellationTokenSource();
         private CancellationTokenSource _coverCancellationToken = new CancellationTokenSource();
-        private bool _canBroadcast;
 
         #region Commands
 
@@ -314,11 +312,6 @@ namespace Meridian.ViewModel
                     return a;
                 }
             }
-        }
-
-        public RadioStation CurrentRadio
-        {
-            get { return RadioService.CurrentRadio; }
         }
 
         public TimeSpan CurrentAudioPosition
@@ -693,12 +686,6 @@ namespace Meridian.ViewModel
                     SwitchUIMode(mode);
             });
 
-            StartTrackRadioCommand = new RelayCommand<Audio>(track =>
-            {
-                RadioService.StartRadioFromSong(track.Title, track.Artist);
-                MessengerInstance.Send(new NavigateToPageMessage() { Page = "/Main.NowPlayingView" });
-            });
-
             ShowArtistInfoCommand = new RelayCommand<string>(async artist =>
             {
                 NotificationService.Notify(MainResources.NotificationLookingArtist);
@@ -817,7 +804,6 @@ namespace Meridian.ViewModel
         private void OnCurrentAudioChanged(CurrentAudioChangedMessage message)
         {
             RaisePropertyChanged("CurrentAudio");
-            RaisePropertyChanged("CurrentRadio");
             RaisePropertyChanged("IsPlaying");
             RaisePropertyChanged("CurrentPlaylist");
             RaisePropertyChanged("WindowTitle");
@@ -1026,18 +1012,25 @@ namespace Meridian.ViewModel
                     var artist = CurrentAudio.Artist;
                     var title = CurrentAudio.Title;
 
-                    var imageUri = await DataService.GetTrackImage(artist, title);
-                    if (token.IsCancellationRequested)
-                        return;
+                    Uri imageUri = null;
 
-                    if (imageUri == null)
+                    if (CurrentAudio.AlbumCover != null)
+                        imageUri = CurrentAudio.AlbumCover;
+                    else
                     {
-                        if (Settings.Instance.DownloadArtistArt)
-                        {
-                            imageUri = await DataService.GetArtistImage(artist, Settings.Instance.ShowBackgroundArt);
+                        imageUri = await DataService.GetTrackImage(artist, title);
+                        if (token.IsCancellationRequested)
+                            return;
 
-                            if (token.IsCancellationRequested)
-                                return;
+                        if (imageUri == null)
+                        {
+                            if (Settings.Instance.DownloadArtistArt)
+                            {
+                                imageUri = await DataService.GetArtistImage(artist, Settings.Instance.ShowBackgroundArt);
+
+                                if (token.IsCancellationRequested)
+                                    return;
+                            }
                         }
                     }
 

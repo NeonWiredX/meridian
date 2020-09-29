@@ -12,7 +12,7 @@ namespace Meridian.Services.Media.Core
     /// </summary>
     public class WmpMediaPlayer : MediaPlayerBase
     {
-        private MediaElement _mediaPlayer;
+        private MediaPlayer _mediaPlayer;
 
         public override TimeSpan Position
         {
@@ -34,7 +34,7 @@ namespace Meridian.Services.Media.Core
         public override Uri Source
         {
             get { return _mediaPlayer.Source; }
-            set { _mediaPlayer.Source = value; }
+            set { _mediaPlayer.Open(value); }
         }
 
         public override double Volume
@@ -45,9 +45,8 @@ namespace Meridian.Services.Media.Core
 
         public override void Initialize()
         {
-            _mediaPlayer = (MediaElement)VisualTreeHelper.GetChild((DependencyObject)Application.Current.MainWindow.Content, 0);
-            _mediaPlayer.UpdateLayout();
-            _mediaPlayer.MediaEnded += MediaPlayerOnMediaEnded;
+            _mediaPlayer = new MediaPlayer();
+            _mediaPlayer.MediaEnded  += MediaPlayerOnMediaEnded;
             _mediaPlayer.MediaFailed += MediaPlayerOnMediaFailed;
             _mediaPlayer.MediaOpened += MediaPlayerOnMediaOpened;
         }
@@ -76,19 +75,19 @@ namespace Meridian.Services.Media.Core
             _mediaPlayer = null;
         }
 
-        private void MediaPlayerOnMediaOpened(object sender, RoutedEventArgs e)
+        private void MediaPlayerOnMediaOpened(object sender, EventArgs e)
         {
             if (MediaOpened != null)
                 MediaOpened(sender, e);
         }
 
-        private void MediaPlayerOnMediaFailed(object sender, ExceptionRoutedEventArgs e)
+        private void MediaPlayerOnMediaFailed(object sender, ExceptionEventArgs e)
         {
             if (MediaFailed != null)
                 MediaFailed(sender, e.ErrorException);
         }
 
-        private void MediaPlayerOnMediaEnded(object sender, RoutedEventArgs e)
+        private void MediaPlayerOnMediaEnded(object sender, EventArgs e)
         {
             if (MediaEnded != null)
                 MediaEnded(sender, e);

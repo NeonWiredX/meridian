@@ -193,7 +193,7 @@ namespace Meridian.ViewModel.Search
 
         private async void Save()
         {
-            var album = new VkAudioAlbum() { Title = _album.Artist + " - " + _album.Name };
+            var album = new VkPlaylist() { Title = _album.Artist + " - " + _album.Name };
 
             var flyout = new FlyoutControl();
             flyout.FlyoutContent = new EditAlbumView(album);

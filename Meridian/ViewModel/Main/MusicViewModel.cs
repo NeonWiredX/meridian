@@ -26,13 +26,13 @@ namespace Meridian.ViewModel.Main
         private const int MAX_WALL_AUDIOS = 300;
         private const int MAX_NEWS_AUDIOS = 300;
 
-        private ObservableCollection<VkAudioAlbum> _albums;
+        private ObservableCollection<VkPlaylist> _albums;
         private ObservableCollection<Audio> _tracks;
         private ObservableCollection<AudioArtist> _artists;
         private ObservableCollection<Audio> _newsTracks;
         private ObservableCollection<Audio> _wallTracks;
         private ObservableCollection<Audio> _favoritesTracks;
-        private VkAudioAlbum _selectedAlbum;
+        private VkPlaylist _selectedAlbum;
         private CancellationTokenSource _cancellationToken;
         private int _totalAlbumsCount;
         private int _selectedTabIndex;
@@ -58,7 +58,7 @@ namespace Meridian.ViewModel.Main
         /// <summary>
         /// Команда редактирования альбома
         /// </summary>
-        public RelayCommand<VkAudioAlbum> EditAlbumCommand { get; private set; }
+        public RelayCommand<VkPlaylist> EditAlbumCommand { get; private set; }
 
         /// <summary>
         /// Команда удаления альбома
@@ -95,7 +95,7 @@ namespace Meridian.ViewModel.Main
         /// <summary>
         /// Albums list
         /// </summary>
-        public ObservableCollection<VkAudioAlbum> Albums
+        public ObservableCollection<VkPlaylist> Albums
         {
             get { return _albums; }
             set { Set(ref _albums, value); }
@@ -123,7 +123,7 @@ namespace Meridian.ViewModel.Main
         /// <summary>
         /// Selected album
         /// </summary>
-        public VkAudioAlbum SelectedAlbum
+        public VkPlaylist SelectedAlbum
         {
             get { return _selectedAlbum; }
             set
@@ -279,7 +279,7 @@ namespace Meridian.ViewModel.Main
 
             AddAlbumCommand = new RelayCommand(AddNewAlbum);
 
-            EditAlbumCommand = new RelayCommand<VkAudioAlbum>(EditAlbum);
+            EditAlbumCommand = new RelayCommand<VkPlaylist>(EditAlbum);
 
             RemoveAlbumCommand = new RelayCommand<VkAudioAlbum>(RemoveAlbum);
 
@@ -323,23 +323,23 @@ namespace Meridian.ViewModel.Main
 
             try
             {
-                var response = await DataService.GetUserAlbums();
+                var response = await DataService.GetUserAlbums(count: 100);
 
                 var albums = response.Items;
 
                 _totalAlbumsCount = response.TotalCount;
 
                 if (albums == null)
-                    albums = new List<VkAudioAlbum>();
+                    albums = new List<VkPlaylist>();
 
-                albums.Insert(0, new VkAudioAlbum() { Id = -1, Title = MainResources.MyMusicAllTracks });
+                albums.Insert(0, new VkPlaylist() { Id = -1, Title = MainResources.MyMusicAllTracks });
                 //albums.Insert(1, new VkAudioAlbum() { Id = -100, Title = MainResources.MyMusicNews });
                 //albums.Insert(2, new VkAudioAlbum() { Id = -101, Title = MainResources.MyMusicWall });
                 //albums.Insert(3, new VkAudioAlbum() { Id = -102, Title = MainResources.MyMusicFavorites });
                 //albums.Insert(4, new VkAudioAlbum() { Id = int.MinValue }); //separator
 
 
-                Albums = new ObservableCollection<VkAudioAlbum>(albums);
+                Albums = new ObservableCollection<VkPlaylist>(albums);
 
                 SelectedAlbum = albums.First();
             }
@@ -652,7 +652,7 @@ namespace Meridian.ViewModel.Main
 
         private async void AddNewAlbum()
         {
-            var album = new VkAudioAlbum() { Title = "New album" };
+            var album = new VkPlaylist() { Title = "New album" };
 
             var flyout = new FlyoutControl();
             flyout.FlyoutContent = new EditAlbumView(album);
@@ -676,7 +676,7 @@ namespace Meridian.ViewModel.Main
             }
         }
 
-        private async void EditAlbum(VkAudioAlbum album)
+        private async void EditAlbum(VkPlaylist album)
         {
             var flyout = new FlyoutControl();
             flyout.FlyoutContent = new EditAlbumView(album);

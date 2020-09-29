@@ -3,7 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+      xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
       xmlns:behaviours="clr-namespace:Meridian.Behaviours"
       xmlns:localization="clr-namespace:Meridian.Resources.Localization"
       xmlns:controls="clr-namespace:Meridian.Controls"
@@ -92,10 +92,6 @@
         </Grid>
         <Rectangle Height="1" Grid.ColumnSpan="2" VerticalAlignment="Bottom" Fill="{DynamicResource ForegroundBrush}" SnapsToDevicePixels="True" Margin="0,0,0,0" Opacity="0.15"/>
 
-        <TextBlock Grid.Row="1" Text="{x:Static localization:MainResources.NowPlayingRadioHint}"
-                   Visibility="{Binding Main.CurrentRadio, Source={StaticResource Locator}, Converter={StaticResource NullToVisibilityConverter}}"
-                   Margin="24,7,12,2" FontSize="14" VerticalAlignment="Top" TextWrapping="Wrap" Opacity="0.5" Foreground="{DynamicResource ForegroundBrush}"/>
-        
         <ListBox Grid.Row="2" x:Name="AudioList" Margin="0,0,0,0"
                  ItemsSource="{Binding Source={StaticResource TracksCollection}}" 
                  Style="{StaticResource CommonListBoxStyle}" VirtualizingStackPanel.ScrollUnit="Pixel" ScrollViewer.HorizontalScrollBarVisibility="Disabled"

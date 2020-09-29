@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using LastFmLib;
@@ -23,7 +22,6 @@ using VkLib.Core.Friends;
 using VkLib.Core.Groups;
 using VkLib.Core.Users;
 using VkLib.Error;
-using Xbox.Music;
 using DateTimeConverter = Meridian.Helpers.DateTimeConverter;
 using VkAudio = Meridian.Model.VkAudio;
 
@@ -31,9 +29,8 @@ namespace Meridian.Services
 {
     public static class DataService
     {
-        private static readonly Vkontakte _vkontakte;
+        private static readonly Vk _vkontakte;
         private static readonly LastFm _lastFm;
-        private static readonly MusicClient _xboxMusic = new MusicClient("Meridian", "u6QLSdNTIS9lrjk306Q1EdsAsHHM3fIk+FYgNTRZrhs=");
 
         static DataService()
         {
@@ -59,14 +56,14 @@ namespace Meridian.Services
             return null;
         }
 
-        public static async Task<ItemsResponse<VkAudioAlbum>> GetUserAlbums(int count = 0, int offset = 0, long ownerId = 0)
+        public static async Task<ItemsResponse<VkPlaylist>> GetUserAlbums(long ownerId = 0, int count = 0, int offset = 0)
         {
             try
             {
-                var response = await _vkontakte.Audio.GetAlbums(ownerId, count, offset);
+                var response = await _vkontakte.Audio.GetPlaylists(ownerId == 0 ? _vkontakte.AccessToken.UserId : ownerId, count, offset);
                 if (response.Items != null)
                 {
-                    return new ItemsResponse<VkAudioAlbum>(response.Items, response.TotalCount);
+                    return new ItemsResponse<VkPlaylist>(response.Items, response.TotalCount);
                 }
             }
             catch (VkInvalidTokenException)
@@ -77,7 +74,7 @@ namespace Meridian.Services
                 AccountManager.LogOutVk();
             }
 
-            return ItemsResponse<VkAudioAlbum>.Empty;
+            return ItemsResponse<VkPlaylist>.Empty;
         }
 
         public static async Task<ItemsResponse<VkAudio>> GetUserTracks(int count = 0, int offset = 0, long albumId = 0, long ownerId = 0)
@@ -185,31 +182,6 @@ namespace Meridian.Services
                     artist = artists.First();
             }
 
-            if (big)
-            {
-                try
-                {
-                    var results = await _xboxMusic.Find(artist);
-                    if (results != null && results.Artists != null)
-                    {
-                        var resultArtist = results.Artists.Items.FirstOrDefault();
-                        if (resultArtist != null && !string.IsNullOrEmpty(resultArtist.ImageUrl))
-                        {
-                            var imageUrl = resultArtist.ImageUrl;
-
-                            var httpClient = new HttpClient();
-                            var response = await httpClient.GetAsync(imageUrl, HttpCompletionOption.ResponseHeadersRead);
-                            if (response.IsSuccessStatusCode)
-                                return new Uri(resultArtist.ImageUrl);
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    Debug.WriteLine("Xbox Music: Artist " + artist + " not found.");
-                }
-            }
-
             var info = await _lastFm.Artist.GetInfo(null, artist);
             if (info == null || string.IsNullOrEmpty(big ? info.ImageMega : info.ImageExtraLarge))
                 return null;
@@ -221,44 +193,6 @@ namespace Meridian.Services
         {
             if (string.IsNullOrEmpty(artist) || string.IsNullOrEmpty(title))
                 return null;
-
-            try
-            {
-                var results = await _xboxMusic.Find(artist + " - " + title, getArtists: false);
-                string imageUrl = null;
-                if (results != null)
-                {
-                    if (results.Tracks != null)
-                    {
-                        var resultTrack = results.Tracks.Items.FirstOrDefault();
-                        if (resultTrack != null && !string.IsNullOrEmpty(resultTrack.ImageUrl))
-                        {
-                            imageUrl = resultTrack.ImageUrl;
-                        }
-                    }
-
-                    if (imageUrl == null && results.Albums != null)
-                    {
-                        var resultAlbum = results.Albums.Items.FirstOrDefault();
-                        if (resultAlbum != null && !string.IsNullOrEmpty(resultAlbum.ImageUrl))
-                        {
-                            imageUrl = resultAlbum.ImageUrl;
-                        }
-                    }
-                }
-
-                if (imageUrl != null)
-                {
-                    var httpClient = new HttpClient();
-                    var response = await httpClient.GetAsync(imageUrl, HttpCompletionOption.ResponseHeadersRead);
-                    if (response.IsSuccessStatusCode)
-                        return new Uri(imageUrl);
-                }
-            }
-            catch (Exception)
-            {
-                Debug.WriteLine("Xbox Music: Artist " + artist + " not found.");
-            }
 
             var info = await _lastFm.Track.GetInfo(title, artist);
             if (info == null || info.ImageExtraLarge == null || string.IsNullOrEmpty(info.ImageExtraLarge))
@@ -361,7 +295,7 @@ namespace Meridian.Services
         {
             var albums = await _lastFm.Artist.GetTopAlbums(id, artist, count);
 
-            return albums;
+            return albums.FindAll(album => album.Name != "(null)");
         }
 
         public static async Task<List<VkAudio>> GetArtistTopTracks(string id, string artist, int count = 0)
@@ -825,68 +759,6 @@ namespace Meridian.Services
 
             await _lastFm.Track.Scrobble(audio.Artist, audio.Title, time.ToString(), null, (int)audio.Duration.TotalSeconds);
             return true;
-        }
-
-        public static async Task<List<VkAudio>> GetAdvancedRecommendations(int count = 100, CancellationToken token = default(CancellationToken))
-        {
-            //берем первые 300 треков пользователя
-            var allTracks = await GetUserTracks(300);
-            var targetArtists = new List<string>();
-
-            if (allTracks.Items != null)
-            {
-                //перемешиваем и вытаскиваем 5 исполнителей, о которых знает Echonest
-                allTracks.Items.Shuffle();
-
-                int checksCount = 0;
-
-                foreach (var audio in allTracks.Items)
-                {
-                    if (token.IsCancellationRequested)
-                        break;
-
-                    if (targetArtists.Contains(audio.Artist))
-                        continue;
-
-                    if (checksCount > 19)
-                        break;
-
-                    checksCount++;
-
-                    var echoArtists = await ViewModelLocator.Echonest.Artist.Search(audio.Artist);
-
-                    if (token.IsCancellationRequested)
-                        break;
-
-                    if (echoArtists == null || echoArtists.Count == 0)
-                        continue;
-
-                    var artist = echoArtists.First().Name;
-                    targetArtists.Add(artist);
-
-
-                    if (targetArtists.Count == 5)
-                        break;
-                }
-
-                if (token.IsCancellationRequested)
-                    return null;
-
-                var recommendedTracks = await ViewModelLocator.Echonest.Playlist.Basic(artists: targetArtists, count: 100);
-                if (recommendedTracks != null)
-                {
-                    var results = (from track in recommendedTracks
-                                   select new VkAudio()
-                                   {
-                                       Title = track.Title,
-                                       Artist = track.ArtistName
-                                   }).ToList();
-
-                    return results;
-                }
-            }
-
-            return null;
         }
 
         public static Task<List<AudioArtist>> GetArtistsFromTracks(IEnumerable<Audio> tracks, CancellationToken token)

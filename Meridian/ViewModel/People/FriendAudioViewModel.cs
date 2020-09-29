@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -21,8 +21,8 @@ namespace Meridian.ViewModel.People
 
         private VkProfile _selectedFriend;
         private ObservableCollection<Audio> _tracks;
-        private ObservableCollection<VkAudioAlbum> _albums;
-        private VkAudioAlbum _selectedAlbum;
+        private ObservableCollection<VkPlaylist> _albums;
+        private VkPlaylist _selectedAlbum;
         private CancellationTokenSource _cancellationToken;
         private int _totalAlbumsCount;
 
@@ -48,7 +48,7 @@ namespace Meridian.ViewModel.People
             set { Set(ref _selectedFriend, value); }
         }
 
-        public ObservableCollection<VkAudioAlbum> Albums
+        public ObservableCollection<VkPlaylist> Albums
         {
             get { return _albums; }
             set { Set(ref _albums, value); }
@@ -60,7 +60,7 @@ namespace Meridian.ViewModel.People
             set { Set(ref _tracks, value); }
         }
 
-        public VkAudioAlbum SelectedAlbum
+        public VkPlaylist SelectedAlbum
         {
             get { return _selectedAlbum; }
             set
@@ -129,20 +129,20 @@ namespace Meridian.ViewModel.People
 
             try
             {
-                var response = await DataService.GetUserAlbums(0, 0, SelectedFriend.Id);
+                var response = await DataService.GetUserAlbums(SelectedFriend.Id, 0, 0);
 
                 var albums = response.Items;
 
                 _totalAlbumsCount = response.TotalCount;
 
                 if (albums == null)
-                    albums = new List<VkAudioAlbum>();
+                    albums = new List<VkPlaylist>();
 
-                albums.Insert(0, new VkAudioAlbum() { Id = -1, Title = MainResources.MyMusicAllTracks });
-                albums.Insert(1, new VkAudioAlbum() { Id = -101, Title = MainResources.MyMusicWall });
-                albums.Insert(2, new VkAudioAlbum() { Id = int.MinValue }); //separator
+                albums.Insert(0, new VkPlaylist() { Id = -1, Title = MainResources.MyMusicAllTracks });
+                albums.Insert(1, new VkPlaylist() { Id = -101, Title = MainResources.MyMusicWall });
+                albums.Insert(2, new VkPlaylist() { Id = int.MinValue }); //separator
 
-                Albums = new ObservableCollection<VkAudioAlbum>(albums);
+                Albums = new ObservableCollection<VkPlaylist>(albums);
 
                 SelectedAlbum = albums.First();
             }
@@ -165,7 +165,7 @@ namespace Meridian.ViewModel.People
 
             try
             {
-                var response = await DataService.GetUserAlbums(0, Albums.Count - 3, SelectedFriend.Id);
+                var response = await DataService.GetUserAlbums(SelectedFriend.Id, 0, Albums.Count - 3);
 
                 if (response.Items != null)
                 {

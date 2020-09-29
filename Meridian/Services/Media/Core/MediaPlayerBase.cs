@@ -15,7 +15,11 @@ namespace Meridian.Services.Media.Core
         /// <summary>
         /// NAudio engine
         /// </summary>
-        NAudio
+        NAudio,
+        /// <summary>
+        /// UWP (Win 10) media engine
+        /// </summary>
+        Uwp
     }
 
     public abstract class MediaPlayerBase : IDisposable
@@ -36,6 +40,11 @@ namespace Meridian.Services.Media.Core
         public abstract void Play();
         public abstract void Pause();
         public abstract void Stop();
+
+        public virtual void UpdateTransportControls(Audio currentTrack)
+        {
+
+        }
 
         public abstract void Dispose();
     }

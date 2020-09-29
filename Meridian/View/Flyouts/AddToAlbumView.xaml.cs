@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Meridian.Controls;
-using Meridian.Model;
 using Meridian.Services;
 using Meridian.ViewModel;
 using Neptune.UI.Extensions;
@@ -20,10 +19,10 @@ namespace Meridian.View.Flyouts
     /// </summary>
     public partial class AddToAlbumView : UserControl, INotifyPropertyChanged
     {
-        private List<VkAudioAlbum> _albums;
+        private List<VkPlaylist> _albums;
         private VkAudio _track;
 
-        public List<VkAudioAlbum> Albums
+        public List<VkPlaylist> Albums
         {
             get { return _albums; }
             set

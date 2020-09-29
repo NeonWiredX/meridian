@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using VkLib.Core.Audio;
 
@@ -33,7 +28,7 @@ namespace Meridian.Converters
 
         public override Style SelectStyle(object item, DependencyObject container)
         {
-            var album = item as VkAudioAlbum;
+            var album = item as VkPlaylist;
             if (album != null)
             {
 
